@@ -9,8 +9,6 @@ const B = { x: 150, y: 250 };
 const C = { x: 50, y: 100 };
 const D = { x: 250, y: 200 };
 
-let t = -1;
-
 animate();
 
 function animate() {
@@ -19,14 +17,48 @@ function animate() {
   drawLineWithLabelPoints(A, B, "A", "B");
   drawLineWithLabelPoints(C, D, "C", "D");
 
-  const M = { x: lerp(A.x, B.x, t), y: lerp(A.y, B.y, t) };
-  drawLabelPoint(M, "M", t < 0 || t > 1 ? "red" : "white");
-
-  const N = { x: lerp(C.x, D.x, t), y: lerp(C.y, D.y, t) };
-  drawLabelPoint(N, "N", t < 0 || t > 1 ? "red" : "white");
+  const I = getIntersection(A, B, C, D);
+  drawLabelPoint(I, "I");
 
   t += 0.005;
   requestAnimationFrame(animate);
+}
+
+function getIntersection(A, B, C, D) {
+  /*
+    Ix = Ax + (Bx - Ax)t = Cx + (Dx - Cx)u
+    Iy = Ay + (By - Ay)t = Cy + (Dy - Cy)u
+
+    Ax + (Bx - Ax)t = Cx + (Dx - Cx)u
+    Subtract Cx from both sides to get:
+    (Ax - Cx) + (Bx - Ax)t = (Dx - Cx)u
+    
+    Ay + (By - Ay)t = Cy + (Dy - Cy)u
+    Subtract Cy from both sides to get:
+    (Ay - Cy) + (By - Ay)t = (Dy - Cy)u
+    Multiply both sides by (Dx - Cx) to get:
+    (Dx - Cx)(Ay - Cy) + (Dx - Cx)(By - Ay)t = (Dy - Cy)(Dx - Cx)u
+    Substitute (Ax - Cx) + (Bx - Ax)t for (Dx - Cx)u, to give:
+    (Dx - Cx)(Ay - Cy) + (Dx - Cx)(By - Ay)t = (Dy - Cy)(Ax - Cx) + (Dy - Cy)(Bx - Ax)t
+    Subtract (Dy - Cy)(Ax - Cx) and (Dx - Cx)(By - Ay)t, to give:
+    (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) = (Dy - Cy)(Bx - Ax)t - (Dx - Cx)(By - Ay)t
+    Factor t, to give:
+    (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) = [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t
+    Divide by [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t, to give:
+    t = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) / [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]
+
+    Define t = top / bottom, where bottom != 0:
+    top = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx)
+    bottom = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
+  */
+  const top = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
+  const bottom = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
+  const t = top / bottom;
+
+  return {
+    x: lerp(A.x, B.x, t),
+    y: lerp(A.y, B.y, t),
+  };
 }
 
 function lerp(a, b, t) {
