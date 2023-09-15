@@ -9,9 +9,25 @@ const B = { x: 150, y: 250 };
 const C = { x: 50, y: 100 };
 const D = { x: 250, y: 200 };
 
+const mouse = { x: 0, y: 0 };
+
+let angle = 0;
+
+document.addEventListener("mousemove", (e) => {
+  mouse.x = e.x;
+  mouse.y = e.y;
+});
+
 animate();
 
 function animate() {
+  const radius = 50;
+  A.x = mouse.x + Math.cos(angle) * radius;
+  A.y = mouse.y - Math.sin(angle) * radius;
+  B.x = mouse.x - Math.cos(angle) * radius;
+  B.y = mouse.y + Math.sin(angle) * radius;
+  angle += 0.02;
+
   ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
 
   drawLineWithLabelPoints(A, B, "A", "B");
@@ -20,7 +36,6 @@ function animate() {
   const I = getIntersection(A, B, C, D);
   drawLabelPoint(I, "I");
 
-  t += 0.005;
   requestAnimationFrame(animate);
 }
 
@@ -47,7 +62,7 @@ function getIntersection(A, B, C, D) {
     Divide by [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t, to give:
     t = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) / [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]
 
-    Define t = top / bottom, where bottom != 0:
+    Define t = top / bottom, where bottom != 0 (i.e. lines are parallel):
     top = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx)
     bottom = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
   */
