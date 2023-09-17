@@ -42,61 +42,101 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
+/**
+ * Calculates the intersection point of two line segments defined by points A, B, C, and D.
+ *
+ * To find the intersection point (Ix, Iy) of line segments AB and CD, we calculate the common denominator:
+ *   denominator = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
+ *
+ * The formula for the denominator is derived as follows:
+ *   1. Start with the system of equations for the intersection point (Ix, Iy):
+ *      Ix = Ax + (Bx - Ax)tAB = Cx + (Dx - Cx)tCD
+ *      Iy = Ay + (By - Ay)tAB = Cy + (Dy - Cy)tCD
+ *   2. Rewrite the equations to isolate tAB and tCD on the left side:
+ *      (Bx - Ax)tAB - (Cx - Ax) = (Dx - Cx)tCD
+ *      (By - Ay)tAB - (Cy - Ay) = (Dy - Cy)tCD
+ *   3. Divide both equations by (Dy - Cy) and (Dx - Cx) respectively:
+ *      tAB = ((Bx - Ax)tAB - (Cx - Ax)) / (Dx - Cx)
+ *      tCD = ((By - Ay)tAB - (Cy - Ay)) / (Dy - Cy)
+ *   4. Combine both equations into a single equation by equating the right sides:
+ *      ((Bx - Ax)tAB - (Cx - Ax)) / (Dx - Cx) = ((By - Ay)tAB - (Cy - Ay)) / (Dy - Cy)
+ *   5. Cross-multiply to get rid of the denominators:
+ *      ((Bx - Ax)tAB - (Cx - Ax))(Dy - Cy) = ((By - Ay)tAB - (Cy - Ay))(Dx - Cx)
+ *   6. Expand the expressions:
+ *      (Bx - Ax)(Dy - Cy)tAB - (Cx - Ax)(Dy - Cy) = (By - Ay)(Dx - Cx)tAB - (Cy - Ay)(Dx - Cx)
+ *   7. Rearrange terms to isolate tAB:
+ *      (Bx - Ax)(Dy - Cy)tAB - (By - Ay)(Dx - Cx)tAB = (Cx - Ax)(Dy - Cy) - (Cy - Ay)(Dx - Cx)
+ *   8. Factor tAB out:
+ *      tAB[(Bx - Ax)(Dy - Cy) - (By - Ay)(Dx - Cx)] = (Cx - Ax)(Dy - Cy) - (Cy - Ay)(Dx - Cx)
+ *   9. Finally, divide both sides by [(Bx - Ax)(Dy - Cy) - (By - Ay)(Dx - Cx)] to obtain the denominator:
+ *      denominator = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
+ *
+ * We also calculate `numeratorAB` (the numerator of tAB) and `numeratorCD` (the numerator of tCD):
+ *
+ * The formula for `numeratorAB` is derived as follows:
+ *   1. Start with the system of equations for the intersection point (Ix, Iy):
+ *      Ix = Ax + (Bx - Ax)tAB = Cx + (Dx - Cx)tCD
+ *      Iy = Ay + (By - Ay)tAB = Cy + (Dy - Cy)tCD
+ *   2. Subtract Cx and Cy from Ix and Iy equations respectively:
+ *      Ix - Cx = (Bx - Ax)tAB = (Dx - Cx)tCD
+ *      Iy - Cy = (By - Ay)tAB = (Dy - Cy)tCD
+ *   3. Isolate tAB in the first equation and tCD in the second equation:
+ *      tAB = (Ix - Cx) / (Bx - Ax) = (Dx - Cx)tCD
+ *      tCD = (Iy - Cy) / (By - Ay) = (Dy - Cy)tCD
+ *   4. Solve for numeratorAB by multiplying both sides by (Bx - Ax):
+ *      numeratorAB = (Ix - Cx)(Bx - Ax) = (Dx - Cx)(Ix - Cx)
+ *
+ * The formula for `numeratorCD` is derived as follows:
+ *   1. Start with the same system of equations for the intersection point (Ix, Iy).
+ *   2. Subtract Ax and Ay from Ix and Iy equations respectively:
+ *      Ix - Ax = (Bx - Ax)tAB = (Cx - Ax)tCD
+ *      Iy - Ay = (By - Ay)tAB = (Cy - Ay)tCD
+ *   3. Isolate tAB in the first equation and tCD in the second equation:
+ *      tAB = (Ix - Ax) / (Bx - Ax) = (Cx - Ax)tCD
+ *      tCD = (Iy - Ay) / (By - Ay) = (Cy - Ay)tCD
+ *   4. Solve for numeratorCD by multiplying both sides by (Cy - Ay):
+ *      numeratorCD = (Iy - Ay)(Cx - Ax) = (By - Ay)(Ix - Ax)
+ *
+ * If tAB and tCD are within the valid range [0, 1] for line segments and the denominator is not zero, the intersection point is within both line segments.
+ *
+ * @param {Object} A - The starting point of line segment AB.
+ * @param {Object} B - The ending point of line segment AB.
+ * @param {Object} C - The starting point of line segment CD.
+ * @param {Object} D - The ending point of line segment CD.
+ * @returns {Object|null} - The intersection point (Ix, Iy) or null if no intersection.
+ */
 function getIntersection(A, B, C, D) {
-  /*
-    Ix = Ax + (Bx - Ax)t = Cx + (Dx - Cx)u
-    Iy = Ay + (By - Ay)t = Cy + (Dy - Cy)u
-  
-    Ax + (Bx - Ax)t = Cx + (Dx - Cx)u
-    Subtract Cx from both sides to get:
-    (Ax - Cx) + (Bx - Ax)t = (Dx - Cx)u
-    
-    Ay + (By - Ay)t = Cy + (Dy - Cy)u
-    Subtract Cy from both sides to get:
-    (Ay - Cy) + (By - Ay)t = (Dy - Cy)u
-  
-    Multiply both sides by (Dx - Cx) to get:
-    (Dx - Cx)(Ay - Cy) + (Dx - Cx)(By - Ay)t = (Dy - Cy)(Dx - Cx)u
-    Substitute (Ax - Cx) + (Bx - Ax)t for (Dx - Cx)u, to give:
-    (Dx - Cx)(Ay - Cy) + (Dx - Cx)(By - Ay)t = (Dy - Cy)(Ax - Cx) + (Dy - Cy)(Bx - Ax)t
-    Subtract (Dy - Cy)(Ax - Cx) and (Dx - Cx)(By - Ay)t, to give:
-    (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) = (Dy - Cy)(Bx - Ax)t - (Dx - Cx)(By - Ay)t
-    Factor t, to give:
-    (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) = [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t
-    Divide by [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t, to give:
-    t = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) / [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]
-  
-    Define t = tTop / bottom, where bottom != 0 (i.e. lines are parallel):
-    tTop = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx)
-    bottom = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
-    
-    Define u = uTop / bottom, where bottom != 0 (i.e. lines are parallel):
-    uTop = (Cy - Ay)(Ax - Bx) - (Cx - Ax)(Ay - By)
-    bottom = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
-  */
-  const tTop = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
-  const uTop = (C.y - A.y) * (A.x - B.x) - (C.x - A.x) * (A.y - B.y);
-  const bottom = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
+  // Calculate the common denominator
+  const denominator = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
 
-  if (bottom != 0) {
-    const t = tTop / bottom;
-    const u = uTop / bottom;
+  // Check if the lines are not parallel (denominator is not zero)
+  if (denominator !== 0) {
+    // Calculate numeratorAB (numerator of tAB)
+    const numeratorAB = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
 
-    if (t > 0 && t < 1 && u > 0 && u < 1) {
+    // Calculate numeratorCD (numerator of tCD)
+    const numeratorCD = (C.y - A.y) * (A.x - B.x) - (C.x - A.x) * (A.y - B.y);
+
+    // Calculate tAB and tCD
+    const tAB = numeratorAB / denominator;
+    const tCD = numeratorCD / denominator;
+
+    // Check if tAB and tCD are within the valid range [0, 1] for line segments
+    if (tAB >= 0 && tAB <= 1 && tCD >= 0 && tCD <= 1) {
+      // Calculate the intersection point (Ix, Iy)
+      const Ix = A.x + (B.x - A.x) * tAB;
+      const Iy = A.y + (B.y - A.y) * tAB;
+
       return {
-        x: lerp(A.x, B.x, t),
-        y: lerp(A.y, B.y, t),
-        tOffset: t,
-        uOffset: u,
+        x: Ix,
+        y: Iy,
+        offset: tAB,
       };
     }
   }
 
+  // If lines do not intersect or are parallel, return null
   return null;
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
 }
 
 function drawLine(point1, point2) {
