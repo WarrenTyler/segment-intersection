@@ -34,7 +34,10 @@ function animate() {
   drawLineWithLabelPoints(C, D, "C", "D");
 
   const I = getIntersection(A, B, C, D);
-  drawLabelPoint(I, "I");
+
+  if (I) {
+    drawLabelPoint(I, "I");
+  }
 
   requestAnimationFrame(animate);
 }
@@ -43,7 +46,7 @@ function getIntersection(A, B, C, D) {
   /*
     Ix = Ax + (Bx - Ax)t = Cx + (Dx - Cx)u
     Iy = Ay + (By - Ay)t = Cy + (Dy - Cy)u
-
+  
     Ax + (Bx - Ax)t = Cx + (Dx - Cx)u
     Subtract Cx from both sides to get:
     (Ax - Cx) + (Bx - Ax)t = (Dx - Cx)u
@@ -51,6 +54,7 @@ function getIntersection(A, B, C, D) {
     Ay + (By - Ay)t = Cy + (Dy - Cy)u
     Subtract Cy from both sides to get:
     (Ay - Cy) + (By - Ay)t = (Dy - Cy)u
+  
     Multiply both sides by (Dx - Cx) to get:
     (Dx - Cx)(Ay - Cy) + (Dx - Cx)(By - Ay)t = (Dy - Cy)(Dx - Cx)u
     Substitute (Ax - Cx) + (Bx - Ax)t for (Dx - Cx)u, to give:
@@ -61,19 +65,34 @@ function getIntersection(A, B, C, D) {
     (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) = [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t
     Divide by [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]t, to give:
     t = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx) / [(Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)]
-
-    Define t = top / bottom, where bottom != 0 (i.e. lines are parallel):
-    top = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx)
+  
+    Define t = tTop / bottom, where bottom != 0 (i.e. lines are parallel):
+    tTop = (Dx - Cx)(Ay - Cy) - (Dy - Cy)(Ax - Cx)
+    bottom = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
+    
+    Define u = uTop / bottom, where bottom != 0 (i.e. lines are parallel):
+    uTop = (Cy - Ay)(Ax - Bx) - (Cx - Ax)(Ay - By)
     bottom = (Dy - Cy)(Bx - Ax) - (Dx - Cx)(By - Ay)
   */
-  const top = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
+  const tTop = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
+  const uTop = (C.y - A.y) * (A.x - B.x) - (C.x - A.x) * (A.y - B.y);
   const bottom = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
-  const t = top / bottom;
 
-  return {
-    x: lerp(A.x, B.x, t),
-    y: lerp(A.y, B.y, t),
-  };
+  if (bottom != 0) {
+    const t = tTop / bottom;
+    const u = uTop / bottom;
+
+    if (t > 0 && t < 1 && u > 0 && u < 1) {
+      return {
+        x: lerp(A.x, B.x, t),
+        y: lerp(A.y, B.y, t),
+        tOffset: t,
+        uOffset: u,
+      };
+    }
+  }
+
+  return null;
 }
 
 function lerp(a, b, t) {
